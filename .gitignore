@@ -1,0 +1,24 @@
+# Ignore everything in proj/
+proj/*
+
+# But keep .gitkeep
+!proj/.gitkeep
+
+# But keep project0 (and all its contents)
+!proj/proj0/
+!proj/proj1/
+!proj/proj2/
+!proj/proj3/
+!proj/proj4/
+
+
+lec/*
+!lec/.gitkeep
+
+disc/*
+!disc/.gitkeep
+
+**/.DS_Store
+**/.ipynb_checkpoints
+**/__pycache__
+**/.OTTER_LOG
