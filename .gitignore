@@ -18,6 +18,9 @@ lec/*
 disc/*
 !disc/.gitkeep
 
+# But keep published discussion notebooks (and all their contents)
+!disc/disc03/
+
 **/.DS_Store
 **/.ipynb_checkpoints
 **/__pycache__
