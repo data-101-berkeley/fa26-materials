@@ -20,6 +20,7 @@ disc/*
 
 # But keep published discussion notebooks (and all their contents)
 !disc/disc03/
+!disc/disc04/
 
 **/.DS_Store
 **/.ipynb_checkpoints
