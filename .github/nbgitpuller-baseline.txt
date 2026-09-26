@@ -1,0 +1,13 @@
+# Known nbgitpuller commits already in main's history as of 2026-09-25.
+# They entered via the 9/24 push (see scripts/README.md) and cannot be removed
+# without rewriting history, which would break every student's pull mid-semester.
+# The watcher alerts only on nbgitpuller commits NOT listed here.
+# To re-baseline after an intentional change:
+#   git log origin/main --format=%H --author=nbgitpuller > .github/nbgitpuller-baseline.txt
+bd59c2506bc992e3f223ed98aa8490a9b6a2dc25  # 2026-09-18 Merge remote-tracking branch 'origin/main'
+faf04691179b63aba2540b70594ad8620d29f857  # 2026-09-17 Merge remote-tracking branch 'origin/main'
+d1941fbb4cf3cca9bf9dd8b943245e90cc4c0490  # 2026-09-11 Automatic commit by nbgitpuller
+0e0dc8c004b44b69380196fefd342a38c9470a1c  # 2026-09-11 Automatic commit by nbgitpuller
+b8d69811c14abe616474d5fb1d236a79be1c410d  # 2026-09-10 Automatic commit by nbgitpuller
+9d70208ea249faeeb76b359415d98c009a70cc1d  # 2026-09-10 Merge remote-tracking branch 'origin/main'
+fcd43e6b9486862469b47166b082e4ad066a854b  # 2026-09-10 Automatic commit by nbgitpuller

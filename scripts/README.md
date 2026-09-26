@@ -47,3 +47,33 @@ python3 scripts/check_no_solutions.py main..HEAD # plus commit authors
 ```
 
 Genuine exception? `git push --no-verify`. Please be sure.
+
+## Monitoring
+
+Two layers run automatically:
+
+- `.github/workflows/no-solutions.yml` -- on every push and PR, checks that
+  push's commit range.
+- `.github/workflows/nbgitpuller-watch.yml` -- every 2 hours, scans all of
+  `main` rather than one push range, so it also catches commits that arrive by
+  a route a push range would miss (force-push, rewritten branch, a run that was
+  skipped). On a hit it opens an issue labelled `nbgitpuller-watch`, or comments
+  on the existing one rather than filing duplicates, and fails the run.
+
+Seven nbgitpuller commits are already in history from the September incident.
+They are listed in `.github/nbgitpuller-baseline.txt` and ignored, so the
+watcher only reports new ones. Removing them would mean rewriting history,
+which would break every student's pull mid-semester.
+
+Check by hand any time:
+
+```bash
+python3 scripts/watch_nbgitpuller.py origin/main
+```
+
+If a future change intentionally adds nbgitpuller commits, re-baseline:
+
+```bash
+git log origin/main --format=%H --author=nbgitpuller > .github/nbgitpuller-baseline.txt
+```
+

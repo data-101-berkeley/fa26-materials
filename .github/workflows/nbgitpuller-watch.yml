@@ -1,0 +1,93 @@
+name: Watch for nbgitpuller commits
+
+# Backstop for the push-triggered guard in no-solutions.yml, which only sees
+# the range of a single push. This scans the whole branch on a schedule, so it
+# also catches commits that arrive by a route a push range would miss.
+on:
+  schedule:
+    - cron: '17 */2 * * *'      # every 2 hours
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan main for new nbgitpuller commits
+        id: scan
+        run: |
+          set +e
+          OUT=$(python3 scripts/watch_nbgitpuller.py origin/main 2>&1); CODE=$?
+          echo "$OUT"
+          {
+            echo 'report<<REPORT_EOF'
+            echo "$OUT"
+            echo 'REPORT_EOF'
+          } >> "$GITHUB_OUTPUT"
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Scan student notebooks for solution markers
+        id: markers
+        run: |
+          set +e
+          OUT=$(python3 scripts/check_no_solutions.py 2>&1); CODE=$?
+          echo "$OUT"
+          {
+            echo 'report<<REPORT_EOF'
+            echo "$OUT"
+            echo 'REPORT_EOF'
+          } >> "$GITHUB_OUTPUT"
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Open an issue if anything was found
+        if: steps.scan.outputs.code != '0' || steps.markers.outputs.code != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = '[automated] nbgitpuller commits or solutions detected on main';
+            const body = [
+              'The scheduled watcher found something on `main`.',
+              '',
+              '### New nbgitpuller commits',
+              '```', `${{ steps.scan.outputs.report }}`, '```',
+              '',
+              '### Student notebook scan',
+              '```', `${{ steps.markers.outputs.report }}`, '```',
+              '',
+              'See `scripts/README.md`. This issue is reused, not duplicated,',
+              'so close it once the problem is resolved.',
+              '',
+              `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            ].join('\n');
+
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', labels: 'nbgitpuller-watch',
+            });
+
+            if (existing.data.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: existing.data[0].number, body,
+              });
+              core.info(`Commented on existing issue #${existing.data[0].number}`);
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo,
+                title, body, labels: ['nbgitpuller-watch'],
+              });
+              core.info('Opened a new issue');
+            }
+
+      - name: Fail the run if anything was found
+        if: steps.scan.outputs.code != '0' || steps.markers.outputs.code != '0'
+        run: exit 1
