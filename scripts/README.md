@@ -33,7 +33,9 @@ git config core.hooksPath .githooks
 ```
 
 `.githooks/pre-push` then refuses any push that contains otter solution markers
-under `proj/` or `disc/`, or any commit authored by nbgitpuller. Git does not
+under `proj/` or `disc/`, or any nbgitpuller commit that changes `proj/` or
+`disc/`. nbgitpuller commits that only touch `lec/` are allowed, so pushing
+lecture edits from DataHub works. Git does not
 share hooks on clone, so everyone with push access needs this one command.
 
 The same check runs in CI (`.github/workflows/no-solutions.yml`) as a safety
@@ -50,15 +52,10 @@ Genuine exception? `git push --no-verify`. Please be sure.
 
 ## Monitoring
 
-Two layers run automatically:
-
-- `.github/workflows/no-solutions.yml` -- on every push and PR, checks that
-  push's commit range.
-- `.github/workflows/nbgitpuller-watch.yml` -- every 2 hours, scans all of
-  `main` rather than one push range, so it also catches commits that arrive by
-  a route a push range would miss (force-push, rewritten branch, a run that was
-  skipped). On a hit it opens an issue labelled `nbgitpuller-watch`, or comments
-  on the existing one rather than filing duplicates, and fails the run.
+`.github/workflows/no-solutions.yml` runs on every push to `main` and every PR.
+It scans the student notebooks for solution markers and scans all of `main`'s
+history (not just the push range) for nbgitpuller commits touching `proj/` or
+`disc/`, so a force-push or rewritten branch is caught too.
 
 Seven nbgitpuller commits are already in history from the September incident.
 They are listed in `.github/nbgitpuller-baseline.txt` and ignored, so the
