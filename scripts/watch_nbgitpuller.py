@@ -7,11 +7,14 @@ arrive by a route a push range would miss -- a force-push, a rewritten branch,
 or anything that landed while CI was skipped.
 
 Seven nbgitpuller commits are already in history; they are listed in
-.github/nbgitpuller-baseline.txt and ignored. Anything else exits 1.
+.github/nbgitpuller-baseline.txt and ignored. nbgitpuller commits that do not
+touch proj/ or disc/ are also ignored. Anything else exits 1.
 """
 import pathlib
 import subprocess
 import sys
+
+from check_no_solutions import watched_changes
 
 BASELINE = pathlib.Path(".github/nbgitpuller-baseline.txt")
 BRANCH = sys.argv[1] if len(sys.argv) > 1 else "origin/main"
@@ -46,7 +49,7 @@ def main():
         if len(parts) != 4:
             continue
         found += 1
-        if parts[0] not in known:
+        if parts[0] not in known and watched_changes(parts[0]):
             new.append(parts)
 
     print(f"branch            : {BRANCH}")
@@ -54,7 +57,7 @@ def main():
     print(f"nbgitpuller found : {found}")
 
     if not new:
-        print("\nOK -- no new nbgitpuller commits.")
+        print("\nOK -- no new nbgitpuller commits touching proj/ or disc/.")
         return 0
 
     print(f"\nALERT: {len(new)} new nbgitpuller commit(s) on {BRANCH}\n")
