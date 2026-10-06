@@ -9,7 +9,9 @@ Checks, chosen so that they fire on both incidents and on nothing currently in
 the repo:
 
   1. otter solution markers in any notebook under proj/ or disc/
-  2. commits authored by nbgitpuller
+  2. commits authored by nbgitpuller that carry local changes into proj/ or
+     disc/ (nbgitpuller commits that only touch lec/ are instructor edits
+     and are allowed)
 
 Stdlib only. Exit 0 clean, 1 on a violation.
 """
@@ -46,6 +48,23 @@ def check_markers():
     return bad
 
 
+def watched_changes(sha):
+    """Student-material files this commit brought in from a local copy.
+
+    An nbgitpuller merge has the local work as parent 1 and origin as parent 2,
+    so what leaked is the merge result relative to origin.
+    """
+    parents = subprocess.run(
+        ["git", "rev-list", "--parents", "-n", "1", sha],
+        capture_output=True, text=True,
+    ).stdout.split()[1:]
+    base = parents[1] if len(parents) > 1 else (parents[0] if parents else None)
+    cmd = ["git", "diff", "--name-only", base, sha] if base else \
+          ["git", "show", "--name-only", "--format=", sha]
+    out = subprocess.run(cmd + ["--", *WATCHED], capture_output=True, text=True).stdout
+    return [f for f in out.splitlines() if f]
+
+
 def check_authors(rev_range):
     if not rev_range:
         return []
@@ -60,7 +79,9 @@ def check_authors(rev_range):
             continue
         sha, name, email, subj = parts
         if "nbgitpuller" in name.lower() or "nbgitpuller" in email.lower():
-            bad.append((sha[:10], name, subj))
+            files = watched_changes(sha)
+            if files:
+                bad.append((sha[:10], name, subj, files))
     return bad
 
 
@@ -95,9 +116,11 @@ def main():
     authors = check_authors(rev_range)
     if authors:
         failed = True
-        print("\nBLOCKED: commits authored by nbgitpuller\n")
-        for sha, name, subj in authors:
+        print("\nBLOCKED: nbgitpuller commits touching student materials\n")
+        for sha, name, subj, files in authors:
             print(f"  {sha}  {name}  {subj}")
+            for f in files:
+                print(f"      {f}")
         print(
             "\n  nbgitpuller auto-commits your working copy when it pulls, so\n"
             "  these carry whatever was in your DataHub directory. Never push\n"
